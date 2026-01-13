@@ -4,13 +4,13 @@ Simple PHP/MySQL application for Kathmandu University School of Management (KUSO
 
 Requirements
 - XAMPP (PHP 7.4+/MySQL)
-- Place project in `C:\xampp\htdocs\e-fee` and open in browser.
+- Place project in `C:\xampp\htdocs\feenix` and open in browser.
 
 Quick setup
-1. Put files into `C:\xampp\htdocs\e-fee`.
-2. Open in browser: `http://localhost/e-fee/install.php` to create database, tables, and an admin user (`admin@kusom.edu.np`, password `admin123`).
+1. Put files into `C:\xampp\htdocs\feenix`.
+2. Open in browser: `http://localhost/feenix/install.php` to create database, tables, and an admin user (`admin@kusom.edu.np`, password `admin123`).
 3. Remove or secure `install.php` after running.
-4. Login: `http://localhost/e-fee/login.php`.
+4. Login: `http://localhost/feenix/login.php`.
 
 Default pages
 - `install.php` — creates DB, tables, uploads folder and default admin

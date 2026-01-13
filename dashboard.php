@@ -78,16 +78,107 @@ require 'header.php';
                     <h3 style="margin: 0;">Upload Fee Receipt</h3>
                 </div>
                 <form action="upload.php" method="post" enctype="multipart/form-data">
-                    <div class="form-group">
-                        <label class="form-label">Select Receipt File</label>
-                        <div style="border: 2px dashed var(--border-color); padding: 30px; border-radius: var(--radius-md); text-align: center; background: var(--bg-color); transition: all 0.3s; cursor: pointer;" onclick="document.querySelector('input[type=file]').click()">
-                            <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--text-light); margin-bottom: 15px;"></i>
-                            <p style="margin-bottom: 10px; font-weight: 500;">Click to upload or drag and drop</p>
-                            <p style="font-size: 0.85rem; color: var(--text-light);">PDF, JPG, PNG (Max 5MB)</p>
-                            <input type="file" name="receipt" class="form-control" style="display: none;" required onchange="this.parentElement.style.borderColor = 'var(--primary-color)'; this.parentElement.querySelector('p').textContent = this.files[0].name;">
+                    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label class="form-label">Academic Year</label>
+                            <select name="student_year" id="student_year" class="form-control" required onchange="updateSemesters()">
+                                <option value="">Select Year</option>
+                                <option value="First Year">First Year</option>
+                                <option value="Second Year">Second Year</option>
+                                <option value="Third Year">Third Year</option>
+                                <option value="Fourth Year">Fourth Year</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Semester</label>
+                            <select name="semester" id="semester" class="form-control" required>
+                                <option value="">Select Year First</option>
+                            </select>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">
+
+                    <script>
+                        const semesterMap = {
+                            "First Year": ["First Semester", "Second Semester"],
+                            "Second Year": ["Third Semester", "Fourth Semester"],
+                            "Third Year": ["Fifth Semester", "Sixth Semester"],
+                            "Fourth Year": ["Seventh Semester", "Eighth Semester"]
+                        };
+
+                        function updateSemesters() {
+                            const yearSelect = document.getElementById('student_year');
+                            const semSelect = document.getElementById('semester');
+                            const selectedYear = yearSelect.value;
+                            
+                            semSelect.innerHTML = '<option value="">Select Semester</option>';
+                            
+                            if (selectedYear && semesterMap[selectedYear]) {
+                                semesterMap[selectedYear].forEach(sem => {
+                                    const option = document.createElement('option');
+                                    option.value = sem;
+                                    option.textContent = sem;
+                                    semSelect.appendChild(option);
+                                });
+                            }
+                            
+                            // Enable/disable file upload based on year and semester selection
+                            toggleFileUpload();
+                        }
+                        
+                        function toggleFileUpload() {
+                            const yearSelect = document.getElementById('student_year');
+                            const semSelect = document.getElementById('semester');
+                            const fileUploadArea = document.getElementById('file-upload-area');
+                            const fileInput = document.getElementById('receipt-file');
+                            const uploadBtn = document.getElementById('upload-btn');
+                            const warningMsg = document.getElementById('warning-msg');
+                            
+                            const yearSelected = yearSelect.value !== '';
+                            const semSelected = semSelect.value !== '';
+                            
+                            if (yearSelected && semSelected) {
+                                // Enable file upload
+                                fileUploadArea.style.pointerEvents = 'auto';
+                                fileUploadArea.style.cursor = 'pointer';
+                                fileInput.disabled = false;
+                                uploadBtn.disabled = false;
+                                uploadBtn.style.opacity = '1';
+                                uploadBtn.style.cursor = 'pointer';
+                                warningMsg.style.display = 'none';
+                            } else {
+                                // Disable file upload
+                                fileUploadArea.style.pointerEvents = 'none';
+                                fileUploadArea.style.cursor = 'not-allowed';
+                                fileInput.disabled = true;
+                                uploadBtn.disabled = true;
+                                uploadBtn.style.opacity = '1';
+                                uploadBtn.style.cursor = 'not-allowed';
+                                warningMsg.style.display = 'block';
+                            }
+                        }
+                        
+                        // Initialize on page load
+                        document.addEventListener('DOMContentLoaded', function() {
+                            toggleFileUpload();
+                            
+                            // Add event listener to semester select
+                            document.getElementById('semester').addEventListener('change', toggleFileUpload);
+                        });
+                    </script>
+
+                    <div class="form-group">
+                        <label class="form-label">Select Receipt File</label>
+                        <div id="file-upload-area" style="border: 2px dashed var(--border-color); padding: 30px; border-radius: var(--radius-md); text-align: center; background: var(--bg-color); transition: all 0.3s; cursor: not-allowed; pointer-events: none;" onclick="if(!this.style.pointerEvents || this.style.pointerEvents === 'auto') document.getElementById('receipt-file').click()">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--text-light); margin-bottom: 15px;"></i>
+                            <p id="file-name-display" style="margin-bottom: 10px; font-weight: 500;">Click to upload or drag and drop</p>
+                            <p style="font-size: 0.85rem; color: var(--text-light);">PDF, JPG, PNG (Max 5MB)</p>
+                            <p id="warning-msg" style="font-size: 0.9rem; color: var(--warning-color); margin-top: 10px;">
+                                <i class="fas fa-exclamation-triangle"></i> Please select Academic Year and Semester first
+                            </p>
+                            <input type="file" name="receipt" id="receipt-file" class="form-control" style="display: none;" required disabled onchange="document.getElementById('file-name-display').textContent = this.files[0].name; document.getElementById('file-upload-area').style.borderColor = 'var(--primary-color)';">
+                        </div>
+                    </div>
+                    <button type="submit" id="upload-btn" class="btn btn-primary" disabled>
                         <i class="fas fa-upload" style="margin-right: 8px;"></i> Upload Receipt
                     </button>
                 </form>

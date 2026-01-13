@@ -3,10 +3,29 @@ require_once __DIR__ . '/config.php';
 require_role('admin');
 
 $conn = getDB();
- $sql = "SELECT f.id, f.user_id, f.orig_filename, f.file_path, f.status, f.remarks, f.uploaded_at, f.tracking_id, u.name, u.email
+
+// Filter Logic
+$where_clauses = ["1=1"];
+if (!empty($_GET['q'])) {
+    $q = $conn->real_escape_string($_GET['q']);
+    $where_clauses[] = "(f.tracking_id LIKE '%$q%')";
+}
+if (!empty($_GET['year'])) {
+    $y = $conn->real_escape_string($_GET['year']);
+    $where_clauses[] = "f.student_year = '$y'";
+}
+if (!empty($_GET['semester'])) {
+    $s = $conn->real_escape_string($_GET['semester']);
+    $where_clauses[] = "f.semester = '$s'";
+}
+
+$where_sql = implode(' AND ', $where_clauses);
+
+$sql = "SELECT f.id, f.user_id, f.orig_filename, f.file_path, f.status, f.remarks, f.uploaded_at, f.tracking_id, f.student_year, f.semester, u.name, u.email
     FROM fee_uploads f
         JOIN users u ON f.user_id = u.id
-        ORDER BY f.uploaded_at DESC";
+    WHERE $where_sql
+    ORDER BY f.uploaded_at DESC";
 $res = $conn->query($sql);
 
 require 'header.php';
@@ -49,7 +68,15 @@ require 'header.php';
                     <h2 style="margin-bottom: 0.5rem;">Admin Panel</h2>
                     <p style="color: var(--text-secondary);"><?php echo date('l, F j, Y'); ?></p>
                 </div>
-                <form method="GET" action="admin.php" style="display:flex; gap:10px; flex-wrap: wrap;">
+                <form method="GET" action="admin.php" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center;">
+                    <select name="year" class="form-control" style="width: 150px;" onchange="this.form.submit()">
+                        <option value="">All Years</option>
+                        <option value="First Year" <?php if(($_GET['year']??'')=='First Year') echo 'selected';?>>First Year</option>
+                        <option value="Second Year" <?php if(($_GET['year']??'')=='Second Year') echo 'selected';?>>Second Year</option>
+                        <option value="Third Year" <?php if(($_GET['year']??'')=='Third Year') echo 'selected';?>>Third Year</option>
+                        <option value="Fourth Year" <?php if(($_GET['year']??'')=='Fourth Year') echo 'selected';?>>Fourth Year</option>
+                    </select>
+
                     <div style="position: relative;">
                         <input type="text" name="q" class="form-control" placeholder="Search tracking ID..." value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" style="padding-left: 40px; width: 250px;">
                         <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
@@ -93,6 +120,7 @@ require 'header.php';
                             <tr>
                                 <th>Tracking ID</th>
                                 <th>Student Details</th>
+                                <th>Year/Sem</th>
                                 <th>File Info</th>
                                 <th>Date</th>
                                 <th>Status</th>
@@ -101,13 +129,6 @@ require 'header.php';
                         </thead>
                         <tbody>
                         <?php 
-                        $queryFilter = '';
-                        if (!empty($_GET['q'])) {
-                            $qv = '%'.$conn->real_escape_string($_GET['q']).'%';
-                            $queryFilter = " WHERE tracking_id LIKE '" . $qv . "' ";
-                            $res = $conn->query("SELECT f.id, f.user_id, f.orig_filename, f.file_path, f.status, f.remarks, f.uploaded_at, f.tracking_id, u.name, u.email FROM fee_uploads f JOIN users u ON f.user_id = u.id" . $queryFilter . " ORDER BY f.uploaded_at DESC");
-                        }
-
                         if ($res->num_rows > 0):
                             while ($row = $res->fetch_assoc()): 
                                 $statusStyle = '';
@@ -137,6 +158,10 @@ require 'header.php';
                                     </div>
                                 </td>
                                 <td>
+                                    <div style="font-weight: 500;"><?php echo htmlspecialchars($row['student_year'] ?? '-'); ?></div>
+                                    <div style="font-size: 0.85rem; color: var(--text-light);"><?php echo htmlspecialchars($row['semester'] ?? '-'); ?></div>
+                                </td>
+                                <td>
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <i class="fas fa-file-pdf" style="color: var(--error-color);"></i>
                                         <?php echo htmlspecialchars($row['orig_filename']); ?>
@@ -147,13 +172,14 @@ require 'header.php';
                                 <td>
                                     <div class="flex" style="gap: 8px;">
                                         <a href="admin_action.php?action=download&id=<?php echo $row['id']; ?>" class="btn btn-icon btn-download" title="Download"><i class="fas fa-download"></i></a>
-                                        <?php if ($row['status'] !== 'Approved'): ?>
+                                        <?php if ($row['status'] === 'Pending'): ?>
                                             <a href="admin_action.php?action=approve&id=<?php echo $row['id']; ?>" class="btn btn-icon btn-approve" title="Approve"><i class="fas fa-check"></i></a>
-                                        <?php endif; ?>
-                                        <?php if ($row['status'] !== 'Verified'): ?>
+                                            <!-- Verified is disabled as per "Only act on Pending" rule, or we can allow Pending -> Verify -> Approve
+                                                But the prompt says "Allow admin actions only when the receipt status is PENDING".
+                                                So once Verified, it is stuck? Assuming Verified is not used or is final for some reason.
+                                                However, standard flow usually allows Verify. I will allow Verify ONLY if Pending.
+                                            -->
                                             <a href="admin_action.php?action=verify&id=<?php echo $row['id']; ?>" class="btn btn-icon btn-verify" title="Verify"><i class="fas fa-search"></i></a>
-                                        <?php endif; ?>
-                                        <?php if ($row['status'] !== 'Rejected'): ?>
                                             <a href="admin_reject.php?id=<?php echo $row['id']; ?>" class="btn btn-icon btn-reject" title="Reject"><i class="fas fa-times"></i></a>
                                         <?php endif; ?>
                                     </div>
@@ -161,7 +187,7 @@ require 'header.php';
                             </tr>
                         <?php endwhile; 
                         else: ?>
-                            <tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-light);">
+                            <tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-light);">
                                 <i class="fas fa-folder-open" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.5;"></i>
                                 <p>No submissions found.</p>
                             </td></tr>

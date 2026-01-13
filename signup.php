@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Kathmandu');
 session_start();
 require 'config.php';
 require 'mail_helper.php';
@@ -14,6 +15,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($name) || empty($email) || empty($password) || empty($confirm_password)) {
         $error = "Please fill in all fields.";
+    } elseif (!preg_match('/@kusom\.edu\.np$/i', $email)) {
+        $error = "Only emails ending in @kusom.edu.np are allowed (e.g., student@kusom.edu.np).";
+    } elseif (strlen($password) < 8 || !preg_match('/[A-Z]/', $password)) {
+        $error = "Password must be at least 8 characters long and contain at least one uppercase letter.";
     } elseif ($password !== $confirm_password) {
         $error = "Passwords do not match.";
     } else {
@@ -36,17 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $success = "Registration successful! You can now login.";
                 
                 // Send welcome email
-                $subject = "Welcome to E-Fee System";
+                $subject = "Welcome to Feenix System";
                 $message = "
                 <html>
                 <head>
-                    <title>Welcome to E-Fee</title>
+                    <title>Welcome to Feenix</title>
                 </head>
                 <body>
                     <h2>Welcome, " . htmlspecialchars($name) . "!</h2>
-                    <p>Thank you for registering with the E-Fee System.</p>
+                    <p>Thank you for registering with the Feenix System.</p>
                     <p>Your account has been successfully created.</p>
-                    <p>You can now <a href='http://localhost/e-fee/login.php'>login</a> to your dashboard.</p>
+                    <p>You can now <a href='http://localhost/feenix/login.php'>login</a> to your dashboard.</p>
                 </body>
                 </html>
                 ";

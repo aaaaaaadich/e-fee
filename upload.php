@@ -1,5 +1,7 @@
 <?php
+date_default_timezone_set('Asia/Kathmandu');
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/mail_helper.php';
 require_role('student');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -72,8 +74,27 @@ function generate_tracking_id() {
 }
 $tracking_id = generate_tracking_id();
 
+// Capture Year and Semester
+$student_year = $_POST['student_year'] ?? '';
+$semester = $_POST['semester'] ?? '';
+
+// Basic validation
+$valid_years = ['First Year', 'Second Year', 'Third Year', 'Fourth Year'];
+if (!in_array($student_year, $valid_years)) {
+    @unlink($dest);
+    $_SESSION['flash'] = 'Invalid Academic Year selected.';
+    header('Location: dashboard.php');
+    exit;
+}
+if (empty($semester)) {
+     @unlink($dest);
+    $_SESSION['flash'] = 'Semester is required.';
+    header('Location: dashboard.php');
+    exit;
+}
+
 // Prepare insert statement
-$stmt = $conn->prepare('INSERT INTO fee_uploads (user_id, orig_filename, filename, file_path, tracking_id, file_hash) VALUES (?, ?, ?, ?, ?, ?)');
+$stmt = $conn->prepare('INSERT INTO fee_uploads (user_id, orig_filename, filename, file_path, tracking_id, student_year, semester, file_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 if ($stmt === false) {
     // Likely missing column/table - cleanup and notify admin
     @unlink($dest);
@@ -85,7 +106,7 @@ if ($stmt === false) {
 $u = $_SESSION['user_id'];
 $orig = $file['name'];
 $path = 'uploads/' . $safeName;
-$stmt->bind_param('isssss', $u, $orig, $safeName, $path, $tracking_id, $file_hash);
+$stmt->bind_param('isssssss', $u, $orig, $safeName, $path, $tracking_id, $student_year, $semester, $file_hash);
 if (!$stmt->execute()) {
     // Insert failed - cleanup file and show error
     @unlink($dest);
@@ -97,6 +118,41 @@ if (!$stmt->execute()) {
 }
 $stmt->close();
 $conn->close();
+
+// Fetch user email and name for notification
+$conn = getDB();
+$userStmt = $conn->prepare('SELECT email, name FROM users WHERE id = ?');
+$userStmt->bind_param('i', $u);
+$userStmt->execute();
+$userStmt->bind_result($userEmail, $userName);
+$userStmt->fetch();
+$userStmt->close();
+$conn->close();
+
+// Send email notification
+if (!empty($userEmail)) {
+    $subject = "Fee Receipt Upload Successful - KUSOM";
+    $message = "
+    <html>
+    <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+        <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;'>
+            <h2 style='color: #800000;'>Receipt Upload Confirmation</h2>
+            <p>Dear {$userName},</p>
+            <p>Your fee receipt has been uploaded successfully to the KUSOM Feenix System.</p>
+            <p><strong>Tracking ID:</strong> {$tracking_id}</p>
+            <p><strong>Academic Year:</strong> {$student_year}</p>
+            <p><strong>Semester:</strong> {$semester}</p>
+            <p><strong>Status:</strong> Pending Review</p>
+            <p>You will be notified upon approval or rejection of your receipt.</p>
+            <p>Thank you for using the KUSOM Feenix System.</p>
+            <hr style='border: 1px solid #ddd; margin: 20px 0;'>
+            <p style='font-size: 12px; color: #666;'>This is an automated message. Please do not reply to this email.</p>
+        </div>
+    </body>
+    </html>
+    ";
+    send_notification_email($userEmail, $subject, $message);
+}
 
 $_SESSION['flash'] = 'Upload successful. Tracking ID: ' . $tracking_id . '. Awaiting approval.';
 header('Location: dashboard.php');

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/mail_helper.php';
 require_role('admin');
 
 $action = $_GET['action'] ?? '';
@@ -12,9 +13,31 @@ if (!$id) {
 $conn = getDB();
 
 if ($action === 'approve' || $action === 'reject' || $action === 'verify') {
+    // 1. Strict Status Enforcement: Only allow actions if current status is 'Pending'
+    $checkStmt = $conn->prepare('SELECT status FROM fee_uploads WHERE id = ?');
+    $checkStmt->bind_param('i', $id);
+    $checkStmt->execute();
+    $checkStmt->bind_result($currentStatus);
+    if (!$checkStmt->fetch()) {
+        $checkStmt->close();
+        // Record not found
+        header('Location: admin.php');
+        exit;
+    }
+    $checkStmt->close();
+
+    if ($currentStatus !== 'Pending') {
+        $_SESSION['flash'] = "Action denied. Receipt status is already '{$currentStatus}'.";
+        header('Location: admin.php');
+        exit;
+    }
+
+    // 2. Proceed with Update
     if ($action === 'approve') $status = 'Approved';
     elseif ($action === 'verify') $status = 'Verified';
     else $status = 'Rejected';
+    
+    // Remarks handling
     if ($action === 'reject') {
         $remarks = $_POST['remarks'] ?? '';
         $stmt = $conn->prepare('UPDATE fee_uploads SET status = ?, remarks = ? WHERE id = ?');
@@ -23,21 +46,39 @@ if ($action === 'approve' || $action === 'reject' || $action === 'verify') {
         $stmt = $conn->prepare('UPDATE fee_uploads SET status = ? WHERE id = ?');
         $stmt->bind_param('si', $status, $id);
     }
-    $stmt->execute();
+    
+    // 3. Database & Error Handling
+    if (!$stmt->execute()) {
+        // This might catch the trigger error if the PHP check somehow failed or race condition
+        $_SESSION['flash'] = "Error updating status: " . $stmt->error;
+        $stmt->close();
+        header('Location: admin.php');
+        exit;
+    }
     $stmt->close();
 
-    // Notify student by email (basic mail()). Configure PHP mail on server for this to work.
+    // 4. Send Notification
     $q = $conn->prepare('SELECT u.email, u.name, f.orig_filename FROM fee_uploads f JOIN users u ON f.user_id = u.id WHERE f.id = ?');
     $q->bind_param('i', $id);
     $q->execute();
     $q->bind_result($stuEmail, $stuName, $origFile);
     if ($q->fetch()) {
-        $to = $stuEmail;
+        // Fix for "Pending" check - fetch() needs to be called after execute
+        // But we already fetched above effectively
+        
         $subject = "Fee Receipt {$status} - KUSOM";
-        $message = "Dear {$stuName},\n\nYour uploaded receipt ('{$origFile}') has been {$status}.\n\nRegards,\nKUSOM Administration";
-        $headers = 'From: admin@kusom.edu.np' . "\r\n";
-        // Suppress errors to avoid exposing server details; developer can log if needed.
-        @mail($to, $subject, $message, $headers);
+        $message = "
+        <html>
+        <body>
+            <p>Dear {$stuName},</p>
+            <p>Your uploaded receipt ('{$origFile}') has been <strong>{$status}</strong>.</p>
+            " . ($status === 'Rejected' && !empty($remarks) ? "<p><strong>Reason:</strong> " . htmlspecialchars($remarks) . "</p>" : "") . "
+             " . ($status === 'Rejected' ? "<p>Please upload a new receipt via your dashboard. Do not try to edit this submission.</p>" : "") . "
+            <p>Regards,<br>KUSOM Administration</p>
+        </body>
+        </html>";
+        
+        send_notification_email($stuEmail, $subject, $message);
     }
     $q->close();
 

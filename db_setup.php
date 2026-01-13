@@ -1,5 +1,5 @@
 <?php
-// DB setup script for XAMPP - run once via browser: http://localhost/e-fee/db_setup.php
+// DB setup script for XAMPP - run once via browser: http://localhost/feenix/db_setup.php
 require_once __DIR__ . '/config.php';
 
 // Connect without selecting DB to create it if missing
@@ -73,7 +73,7 @@ $check->bind_param('s', $adminEmail);
 $check->execute();
 $check->store_result();
 if ($check->num_rows === 0) {
-    $adminPass = password_hash('admin123', PASSWORD_DEFAULT);
+    $adminPass = password_hash('Admin123', PASSWORD_DEFAULT);
     $stmt = $conn->prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)');
     $name = 'Admin User';
     $role = 'admin';

@@ -1,0 +1,17 @@
+[07-Jan-2026 18:22:25 Europe/Berlin] Email sending failed: SMTP Error: Could not authenticate.
+[13-Jan-2026 23:00:05 Asia/Kathmandu] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in C:\xampp\htdocs\e-fee\forgot_password.php:35
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\e-fee\forgot_password.php on line 35
+[13-Jan-2026 23:02:49 Asia/Kathmandu] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in C:\xampp\htdocs\e-fee\forgot_password.php:35
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\e-fee\forgot_password.php on line 35
+[13-Jan-2026 23:02:58 Asia/Kathmandu] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in C:\xampp\htdocs\e-fee\forgot_password.php:35
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\e-fee\forgot_password.php on line 35
+[13-Jan-2026 23:06:18 Asia/Kathmandu] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in C:\xampp\htdocs\feenix\forgot_password.php:35
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\feenix\forgot_password.php on line 35

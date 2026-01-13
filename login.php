@@ -4,23 +4,19 @@ require 'config.php';
 require 'mail_helper.php';
 
 $error = '';
+$email = '';
+$password = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
-    $password_type = isset($_POST['password_type']) ? $_POST['password_type'] : 'password';
-
-    // Check if the user clicked the "Show/Hide Password" button
-    if (isset($_POST['toggle_password'])) {
-        // Toggle the password type
-        $password_type = ($password_type === 'password') ? 'text' : 'password';
-        // Skip login logic, just re-render the page with preserved values
-    } elseif (isset($_POST['login'])) {
-        // Only proceed with login if the "Sign In" button was clicked
-
 
     if (empty($email) || empty($password)) {
         $error = "Please fill in all fields.";
+    } elseif (!preg_match('/@kusom\.edu\.np$/i', $email)) {
+        $error = "Only emails ending in @kusom.edu.np are allowed.";
+    } elseif (strlen($password) < 8 || !preg_match('/[A-Z]/', $password)) {
+        $error = "Password must be at least 8 characters long and contain at least one uppercase letter.";
     } else {
         $conn = getDB();
         $stmt = $conn->prepare("SELECT id, name, email, password, role FROM users WHERE email = ?");
@@ -35,9 +31,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['role'] = $user['role'];
             $_SESSION['name'] = $user['name'];
+            $_SESSION['last_activity'] = time();
 
-            // Send login notification email
-            $subject = "Login Notification - E-Fee System";
+            // Send login notification email (non-blocking)
+            date_default_timezone_set('Asia/Kathmandu');
+            $subject = "Login Notification - Feenix System";
             $login_time = date('Y-m-d H:i:s');
             $message = "
             <html>
@@ -63,13 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Invalid email or password.";
         }
     }
-        }
-    }
- else {
-    // Default values for GET request
-    $email = '';
-    $password = '';
-    $password_type = 'password';
 }
 
 require 'header.php';
@@ -101,21 +92,49 @@ require 'header.php';
                 </div>
             </div>
             <div class="form-group">
-
                 <label for="password" class="form-label">Password</label>
                 <div style="position: relative;">
-                    <input type="hidden" name="password_type" value="<?php echo $password_type; ?>">
-                    <input type="<?php echo $password_type; ?>" name="password" id="password" class="form-control" placeholder="Enter your password" style="padding-left: 45px; padding-right: 100px;" value="<?php echo htmlspecialchars($password); ?>" required>
+                    <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" style="padding-left: 45px; padding-right: 100px;" value="<?php echo htmlspecialchars($password); ?>" required>
                     <i class="fas fa-lock" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
                     
-                    <button type="submit" name="toggle_password" value="1" class="btn btn-sm btn-outline-secondary" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: var(--primary-color); cursor: pointer; font-size: 0.8rem; font-weight: 600;" formnovalidate>
-                        <?php echo ($password_type === 'password') ? 'Show' : 'Hide'; ?>
+                    <button type="button" onclick="togglePasswordVisibility()" class="btn btn-sm btn-outline-secondary" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: var(--primary-color); cursor: pointer; font-size: 0.8rem; font-weight: 600;">
+                        <span id="toggleText">Show</span>
                     </button>
+                </div>
+                <div style="text-align: right; margin-top: 0.5rem;">
+                    <a href="forgot_password.php" style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">
+                        <i class="fas fa-key"></i> Forgot Password?
+                    </a>
                 </div>
             </div>
             <button type="submit" name="login" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
                 Sign In <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
             </button>
+        </form>
+        
+        <script>
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const toggleText = document.getElementById('toggleText');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleText.textContent = 'Hide';
+            } else {
+                passwordInput.type = 'password';
+                toggleText.textContent = 'Show';
+            }
+        }
+        </script>
+        
+        <div class="mt-4" style="text-align: center; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+            <p style="margin-bottom: 0.5rem;">Don't have an account?</p>
+            <a href="signup.php" style="color: var(--primary-color); font-weight: 600;">Create an Account</a>
+        </div>
+    </div>
+</div>
+
+<?php require 'footer.php'; ?>
         </form>
         
         <div class="mt-4" style="text-align: center; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">

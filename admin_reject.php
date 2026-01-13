@@ -8,6 +8,24 @@ if (!$id) {
     exit;
 }
 
+$conn = getDB();
+$stmt = $conn->prepare('SELECT status FROM fee_uploads WHERE id = ?');
+$stmt->bind_param('i', $id);
+$stmt->execute();
+$stmt->bind_result($status);
+if (!$stmt->fetch()) {
+    $stmt->close();
+    header('Location: admin.php');
+    exit;
+}
+$stmt->close();
+
+if ($status !== 'Pending') {
+    $_SESSION['flash'] = "Cannot reject receipt. Status is already '{$status}'.";
+    header('Location: admin.php');
+    exit;
+}
+
 require 'header.php';
 ?>
 <div class="container" style="padding:40px 0;">

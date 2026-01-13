@@ -1,0 +1,10 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Migration",
+			"type": "shell",
+			"command": "php c:\\xampp\\htdocs\\e-fee\\migrate_immutability_trigger.php"
+		}
+	]
+}

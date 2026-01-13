@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 160" width="760" height="160" role="img" aria-label="Feenix System logo">
+  <defs>
+    <linearGradient id="grad-mauve-horizontal" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7f0f0f"/>
+      <stop offset="50%" stop-color="#8b2446"/>
+      <stop offset="100%" stop-color="#5d2a6e"/>
+    </linearGradient>
+    <filter id="shadow-sm" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- symbol (left) -->
+  <g transform="translate(24,8)" filter="url(#shadow-sm)">
+    <circle cx="76" cy="76" r="68" fill="url(#grad-mauve-horizontal)" />
+    <text x="22" y="104" font-family="Georgia, 'Times New Roman', serif" font-size="88" font-weight="700" fill="#ffffff">e</text>
+    <g transform="translate(146,-6) rotate(12)">
+      <rect x="0" y="0" width="56" height="72" rx="6" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.95"/>
+      <polyline points="56,0 46,8 56,16" fill="#ffffff" opacity="0.9"/>
+      <line x1="8" y1="18" x2="48" y2="18" stroke="#ffffff" stroke-width="2" opacity="0.9"/>
+      <line x1="8" y1="32" x2="48" y2="32" stroke="#ffffff" stroke-width="2" opacity="0.9"/>
+      <line x1="8" y1="46" x2="34" y2="46" stroke="#ffffff" stroke-width="2" opacity="0.9"/>
+    </g>
+  </g>
+
+  <!-- text block -->
+  <g transform="translate(200,48)">
+    <text x="0" y="46" font-family="Georgia, 'Times New Roman', serif" font-size="64" font-weight="700" fill="url(#grad-mauve-horizontal)">Feenix</text>
+    <text x="0" y="96" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#4b4b4b">System</text>
+  </g>
+
+  <!-- decorative underline matching gradient -->
+  <rect x="200" y="106" width="220" height="6" rx="3" fill="url(#grad-mauve-horizontal)" opacity="0.9" />
+</svg>

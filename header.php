@@ -9,7 +9,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BBIS Fee Upload</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -24,7 +24,10 @@ if (session_status() === PHP_SESSION_NONE) {
                         <i class="fas fa-university"></i>
                     </div>
                 <?php endif; ?>
-                <span>BBIS Fee Upload</span>
+                <div class="brand-text">
+                    <span class="brand-main">Feenix</span>
+                
+                </div>
             </a>
             <nav>
                 <ul class="nav-links">
